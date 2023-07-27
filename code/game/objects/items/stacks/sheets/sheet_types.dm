@@ -426,6 +426,13 @@ GLOBAL_LIST_INIT(silk_recipes, list ( \
 	recipes = GLOB.silk_recipes
 	return ..()
 
+GLOBAL_LIST_INIT(durathread_recipes, list ( \
+	new/datum/stack_recipe("durathread jumpsuit", /obj/item/clothing/under/misc/durathread, 4, time = 4 SECONDS, check_density = FALSE, category = CAT_CLOTHING),
+	new/datum/stack_recipe("durathread beret", /obj/item/clothing/head/beret/durathread, 2, time = 4 SECONDS, check_density = FALSE, category = CAT_CLOTHING), \
+	new/datum/stack_recipe("durathread beanie", /obj/item/clothing/head/beanie/durathread, 2, time = 4 SECONDS, check_density = FALSE, category = CAT_CLOTHING), \
+	new/datum/stack_recipe("durathread bandana", /obj/item/clothing/mask/bandana/durathread, 1, time = 2.5 SECONDS, check_density = FALSE, category = CAT_CLOTHING), \
+	))
+
 /obj/item/stack/sheet/cloth/durathread
 	name = "durathread"
 	desc = "A fabric sown from incredibly durable threads, known for its usefulness in armor production."

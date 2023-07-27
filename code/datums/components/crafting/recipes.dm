@@ -1,17 +1,74 @@
 
 /datum/crafting_recipe
-	var/name = "" //in-game display name
-	var/reqs[] = list() //type paths of items consumed associated with how many are needed
-	var/blacklist[] = list() //type paths of items explicitly not allowed as an ingredient
-	var/result //type path of item resulting from this craft
-	var/tools[] = list() //type paths of items needed but not consumed
-	var/time = 3 SECONDS //time in seconds
-	var/parts[] = list() //type paths of items that will be placed in the result
-	var/chem_catalysts[] = list() //like tools but for reagents
-	var/category = CAT_NONE //where it shows up in the crafting UI
-	var/subcategory = CAT_NONE
-	var/always_available = TRUE //Set to FALSE if it needs to be learned first.
+	/// in-game display name
+	/// Optional, if not set uses result name
+	var/name
+	/// description displayed in game
+	/// Optional, if not set uses result desc
+	var/desc
+	///type paths of items consumed associated with how many are needed
+	var/list/reqs = list()
+	///type paths of items explicitly not allowed as an ingredient
+	var/list/blacklist = list()
+	///type path of item resulting from this craft
+	var/result
+	/// String defines of items needed but not consumed. Lazy list.
+	var/list/tool_behaviors
+	/// Type paths of items needed but not consumed. Lazy list.
+	var/list/tool_paths
+	///time in seconds. Remember to use the SECONDS define!
+	var/time = 3 SECONDS
+	///type paths of items that will be placed in the result
+	var/list/parts = list()
+	///like tool_behaviors but for reagents
+	var/list/chem_catalysts = list()
+	///where it shows up in the crafting UI
+	var/category
+	var/subcategory // TODO: remove
+	var/tools[] = list() // TODO: remove
 
+	///Set to FALSE if it needs to be learned first.
+	var/always_available = TRUE
+	///Required machines for the craft, set the assigned value of the typepath to CRAFTING_MACHINERY_CONSUME or CRAFTING_MACHINERY_USE. Lazy associative list: type_path key -> flag value.
+	var/list/machinery
+	///Required structures for the craft, set the assigned value of the typepath to CRAFTING_STRUCTURE_CONSUME or CRAFTING_STRUCTURE_USE. Lazy associative list: type_path key -> flag value.
+	var/list/structures
+	///Should only one object exist on the same turf?
+	var/one_per_turf = FALSE
+	/// Steps needed to achieve the result
+	var/list/steps
+	/// Whether the result can be crafted with a crafting menu button
+	var/non_craftable
+	/// Chemical reaction described in the recipe
+	var/datum/chemical_reaction/reaction
+	/// Resulting amount (for stacks only)
+	var/result_amount
+	/// Whether we should delete the contents of the crafted storage item (Only works with storage items, used for ammo boxes, donut boxes, internals boxes, etc)
+	var/delete_contents = TRUE
+
+/datum/crafting_recipe/New()
+	if(!(result in reqs))
+		blacklist += result
+	// These should be excluded from all crafting recipies
+	blacklist += list(
+		/obj/item/cautery/augment,
+		/obj/item/circular_saw/augment,
+		/obj/item/crowbar/cyborg,
+		/obj/item/hemostat/augment,
+		/obj/item/multitool/cyborg,
+		/obj/item/retractor/augment,
+		/obj/item/scalpel/augment,
+		/obj/item/screwdriver/cyborg,
+		/obj/item/surgicaldrill/augment,
+		/obj/item/weldingtool/largetank/cyborg,
+		/obj/item/wirecutters/cyborg,
+		/obj/item/wrench/cyborg,
+	)
+	if(tool_behaviors)
+		tool_behaviors = string_list(tool_behaviors)
+	if(tool_paths)
+		tool_paths = string_list(tool_paths)
+		
 /datum/crafting_recipe/New()
 	if(!(result in reqs))
 		blacklist += result
@@ -25,8 +82,34 @@
 /datum/crafting_recipe/proc/check_requirements(mob/user, list/collected_requirements)
 	return TRUE
 
-//Normal recipes
+/datum/crafting_recipe/proc/on_craft_completion(mob/user, atom/result)
+	return
 
+///Check if the pipe used for atmospheric device crafting is the proper one
+/datum/crafting_recipe/proc/atmos_pipe_check(mob/user, list/collected_requirements)
+	var/obj/item/pipe/required_pipe = collected_requirements[/obj/item/pipe][1]
+	if(ispath(required_pipe.pipe_type, /obj/machinery/atmospherics/pipe/smart))
+		return TRUE
+	return FALSE
+
+/// Additional UI data to be passed to the crafting UI for this recipe
+/datum/crafting_recipe/proc/crafting_ui_data()
+	return list()
+	
+/datum/crafting_recipe/stack/New(obj/item/stack/material, datum/stack_recipe/stack_recipe)
+	if(!material || !stack_recipe || !stack_recipe.result_type)
+		stack_trace("Invalid stack recipe [stack_recipe]")
+		return
+	..()
+
+	src.name = stack_recipe.title
+	src.time = stack_recipe.time
+	src.result = stack_recipe.result_type
+	src.result_amount = stack_recipe.res_amount
+	src.reqs[material] = stack_recipe.req_amount
+	src.category = stack_recipe.category || CAT_MISC
+
+//Normal recipes
 /datum/crafting_recipe/ed209
 	name = "ED209"
 	result = /mob/living/simple_animal/bot/ed209
@@ -761,3 +844,121 @@
 				/obj/item/stack/rods = 10)
 	tools = list(/obj/item/weldingtool, /obj/item/wirecutters, /obj/item/screwdriver)
 	category = CAT_MEDICAL
+	
+/*
+ * Recipe datum
+ */
+/datum/stack_recipe
+	/// The title of the recipe
+	var/title = "ERROR"
+	/// What atom the recipe makes, typepath
+	var/atom/result_type
+	/// Amount of stack required to make
+	var/req_amount = 1
+	/// Amount of resulting atoms made
+	var/res_amount = 1
+	/// Max amount of resulting atoms made
+	var/max_res_amount = 1
+	/// How long it takes to make
+	var/time = 0
+	/// If only one of the resulting atom is allowed per turf
+	var/one_per_turf = FALSE
+	/// If the atom is fulltile, as in a fulltile window. This is used for the direction check to prevent fulltile windows from being able to be built over directional stuff.
+	/// Setting this to true will effectively set check_direction to true.
+	var/is_fulltile = FALSE
+	/// If this atom should run the direction check, for use when building things like directional windows where you can have more than one per turf
+	var/check_direction = FALSE
+	/// If the atom requires a floor below
+	var/on_solid_ground = FALSE
+	/// If the atom requires a tram floor below
+	var/on_tram = FALSE
+	/// If the atom checks that there are objects with density in the same turf when being built. TRUE by default
+	var/check_density = TRUE
+	/// Bitflag of additional placement checks required to place. (STACK_CHECK_CARDINALS|STACK_CHECK_ADJACENT)
+	var/placement_checks = NONE
+	/// If TRUE, the created atom will gain custom mat datums
+	var/applies_mats = FALSE
+	/// What trait, if any, boosts the construction speed of this item
+	var/trait_booster
+	/// How much the trait above, if supplied, boosts the construct speed of this item
+	var/trait_modifier = 1
+	/// Category for general crafting menu
+	var/category
+
+/datum/stack_recipe/New(
+	title,
+	result_type,
+	req_amount = 1,
+	res_amount = 1,
+	max_res_amount = 1,
+	time = 0,
+	one_per_turf = FALSE,
+	on_solid_ground = FALSE,
+	on_tram = FALSE,
+	is_fulltile = FALSE,
+	check_direction = FALSE,
+	check_density = TRUE,
+	placement_checks = NONE,
+	applies_mats = FALSE,
+	trait_booster,
+	trait_modifier = 1,
+	category,
+)
+
+	src.title = title
+	src.result_type = result_type
+	src.req_amount = req_amount
+	src.res_amount = res_amount
+	src.max_res_amount = max_res_amount
+	src.time = time
+	src.one_per_turf = one_per_turf
+	src.on_solid_ground = on_solid_ground
+	src.on_tram = on_tram
+	src.is_fulltile = is_fulltile
+	src.check_direction = check_direction || is_fulltile
+	src.check_density = check_density
+	src.placement_checks = placement_checks
+	src.applies_mats = applies_mats
+	src.trait_booster = trait_booster
+	src.trait_modifier = trait_modifier
+	src.category = src.category || category || CAT_MISC
+
+/datum/stack_recipe/radial
+	/// Optional info to be shown on the radial option for this item
+	var/desc
+
+/datum/stack_recipe/radial/New(
+	title,
+	result_type,
+	req_amount = 1,
+	res_amount = 1,
+	max_res_amount = 1,
+	time = 0,
+	one_per_turf = FALSE,
+	on_solid_ground = FALSE,
+	on_tram = FALSE,
+	window_checks = FALSE,
+	placement_checks = NONE,
+	applies_mats = FALSE,
+	trait_booster,
+	trait_modifier = 1,
+	desc,
+	required_noun,
+	category,
+)
+	if(category)
+		src.category = category
+	if(desc)
+		src.desc = desc
+	if(required_noun)
+		src.desc += span_boldnotice("[desc ? " - ":""]Requires: [req_amount] [required_noun]\s.")
+
+	return ..()
+
+/datum/stack_recipe_list
+	var/title = "ERROR"
+	var/list/recipes
+
+/datum/stack_recipe_list/New(title, recipes)
+	src.title = title
+	src.recipes = recipes

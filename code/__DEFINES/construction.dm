@@ -80,6 +80,18 @@
 //maximum amount of cable in a coil
 #define MAXCOIL 40
 
+// Only here to prevent errors:
+#define CAT_NONE		""
+#define CAT_WEAPONRY	"Weaponry"
+#define CAT_WEAPON		"Weapons"
+#define CAT_AMMO		"Ammunition"
+#define CAT_PRIMAL  	"Tribal"
+#define CAT_STRUCTURES 	"Structures"
+#define CAT_APPAREL		"Apparel"
+#define CAT_ARMOR		"Armor"
+#define CAT_BAIT		"Fishing Bait"
+#define CAT_MEDICAL		"Medical"
+
 // Tablecrafting defines:
 #define CAT_FOOD "Foods"
 #define CAT_BREAD "Breads"
