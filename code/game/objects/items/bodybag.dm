@@ -32,7 +32,7 @@
 	R.open(user)
 	R.add_fingerprint(user)
 	if(istype(src, /obj/item/bodybag/cyborg))
-		var/obj/item/bodybag/cyborg/cyborg_bodybag = I
+		var/obj/item/bodybag/cyborg/cyborg_bodybag = src
 		R.foldedbag_instance = cyborg_bodybag.loaded
 	else
 		R.foldedbag_instance = src
