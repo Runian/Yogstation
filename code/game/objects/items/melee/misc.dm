@@ -203,7 +203,6 @@
 	var/force_on // Damage when on - not stunning
 	var/force_off // Damage when off - not stunning
 	var/weight_class_on // What is the new size class when turned on
-
 	wound_bonus = 15
 
 // Handles all the effects if a successful strike
@@ -511,6 +510,23 @@
 	if(HAS_TRAIT_FROM(target, TRAIT_INCAPACITATED, STAMINA))
 		target.silent += 5
 
+/obj/item/melee/classic_baton/cyborg
+	force = 3 // 1/4 of default.
+	stamina_damage = 15 // 1/4 of default.
+	/// Should it be prevented from attacking if the target's stamina loss is over the limit?
+	var/stamina_damage_limited = TRUE
+	/// What is the stamina loss limit if enabled?
+	var/stamina_damage_limit = 50
+
+/obj/item/melee/classic_baton/cyborg/stun(mob/living/target, mob/living/user)
+	if(!iscyborg(user))
+		return
+	var/mob/living/silicon/robot/cyborg = user
+	var/current_stamina_damage = target.getStaminaLoss()
+	if(!cyborg.emagged && stamina_damage_limited && current_stamina_damage > stamina_damage_limit)
+		to_chat(user, span_warning("Automated safety features prevent you from striking them while they're weak!"))
+		return
+	. = ..()
 /obj/item/melee/classic_baton/secconbaton
 	name = "billy club"
 	desc = "A dark wooden club with the Space Queen's crest burned onto its bottom. Its wrist strap will help keep it in your hands and out of crooks'."

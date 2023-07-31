@@ -44,51 +44,56 @@
 	var/trashtype = null //for disposable cuffs
 
 /obj/item/restraints/handcuffs/attack(mob/living/carbon/C, mob/living/user)
-	if(!istype(C))
+	if(!istype(C) || C.handcuffed)
 		return
+
+	// Lacks the two+ arms needed to be cuffed and does not have an exception to their armless-need.
+	if(C.get_num_arms(FALSE) <= 1 && !C.get_arm_ignore())
+		to_chat(user, span_warning("[C] doesn't have two hands..."))
+		return
+
+	// Prevents Detective Cyborgs from cuffing people directly unless they're emagged.
+	if(iscyborg(user))
+		var/mob/living/silicon/robot/cyborg = user
+		if(istype(cyborg.module, /obj/item/robot_module/detective) && !cyborg.emagged)
+			to_chat(user, span_warning("Warning: Security behavior detected! You can only dispense cuffs to others, not directly cuff people!"))
+			return
 
 	if(iscarbon(user) && (HAS_TRAIT(user, TRAIT_CLUMSY) && prob(50)))
 		to_chat(user, span_warning("Uh... how do those things work?!"))
-		apply_cuffs(user,user)
+		apply_cuffs(user, user)
 		return
 
-	// chance of monkey retaliation
+	// Chance of monkey retaliation.
 	if(ismonkey(C) && prob(MONKEY_CUFF_RETALIATION_PROB))
 		var/mob/living/carbon/monkey/M
 		M = C
 		M.retaliate(user)
+	
+	C.visible_message(span_danger("[user] is trying to put [src.name] on [C]!"), \
+						span_userdanger("[user] is trying to put [src.name] on [C]!"))
+	playsound(loc, cuffsound, 30, 1, -2)
 
-	if(!C.handcuffed)
-		if(C.get_num_arms(FALSE) >= 2 || C.get_arm_ignore())
-			C.visible_message(span_danger("[user] is trying to put [src.name] on [C]!"), \
-								span_userdanger("[user] is trying to put [src.name] on [C]!"))
+	// Yogs start: Prevents darkspawn from cheesing their bead sleep to cuff and kill
+	if(is_darkspawn_or_veil(user) && C.has_status_effect(STATUS_EFFECT_BROKEN_WILL) && (C.get_num_arms(FALSE) >= 2 || C.get_arm_ignore()))
+		to_chat(user, span_boldannounce("Restraining [C] will wake them up! Are you sure you want to do this?"))
+		C.visible_message(span_warning("[C] jerks in their sleep as they are restrained!"))
+		to_chat(C, span_boldannounce("Someone handles your arms roughly, pulling you towards wakefulness!"))
+		if(do_mob(user, C, 1.5 SECONDS, FALSE, FALSE)) // No progress bar
+			C.remove_status_effect(STATUS_EFFECT_BROKEN_WILL)
+			C.SetUnconscious(0)
+	// Yogs end
 
-			playsound(loc, cuffsound, 30, 1, -2)
-
-			// Yogs start: Prevents darkspawn from cheesing their bead sleep to cuff and kill
-			if(is_darkspawn_or_veil(user) && C.has_status_effect(STATUS_EFFECT_BROKEN_WILL) && (C.get_num_arms(FALSE) >= 2 || C.get_arm_ignore()))
-				to_chat(user, span_boldannounce("Restraining [C] will wake them up! Are you sure you want to do this?"))
-				C.visible_message(span_warning("[C] jerks in their sleep as they are restrained!"))
-				to_chat(C, span_boldannounce("Someone handles your arms roughly, pulling you towards wakefulness!"))
-				if(do_mob(user, C, 1.5 SECONDS, FALSE, FALSE)) // No progress bar
-					C.remove_status_effect(STATUS_EFFECT_BROKEN_WILL)
-					C.SetUnconscious(0)
-			// Yogs end
-
-			if(do_mob(user, C, 30) && (C.get_num_arms(FALSE) >= 2 || C.get_arm_ignore()))
-				if(iscyborg(user))
-					apply_cuffs(C, user, TRUE)
-				else
-					apply_cuffs(C, user)
-				to_chat(user, span_notice("You handcuff [C]."))
-				SSblackbox.record_feedback("tally", "handcuffs", 1, type)
-
-				log_combat(user, C, "handcuffed")
-			else
-				to_chat(user, span_warning("You fail to handcuff [C]!"))
-				log_combat(user, C, "attempted to handcuff")
-		else
-			to_chat(user, span_warning("[C] doesn't have two hands..."))
+	if(do_mob(user, C, 30) && (C.get_num_arms(FALSE) >= 2 || !C.get_arm_ignore())) // Successfully cuffed them.
+		apply_cuffs(C, user, iscyborg(user))
+		to_chat(user, span_notice("You handcuff [C]."))
+		SSblackbox.record_feedback("tally", "handcuffs", 1, type)
+		log_combat(user, C, "handcuffed")
+		to_chat(user, span_warning("You fail to handcuff [C]!"))
+		log_combat(user, C, "attempted to handcuff")
+	else
+		to_chat(user, span_warning("You fail to handcuff [C]!"))
+		log_combat(user, C, "attempted to handcuff")
 
 /obj/item/restraints/handcuffs/proc/apply_cuffs(mob/living/carbon/target, mob/user, dispense = 0)
 	if(target.handcuffed)
@@ -219,6 +224,23 @@
 	color = null
 	break_strength = 3
 
+/obj/item/restraints/handcuffs/cable/zipties/attack_self(mob/user)
+	..()
+	if(!iscyborg(user))
+		return
+	var/mob/living/silicon/robot/cyborg = user
+	if(istype(cyborg.module, /obj/item/robot_module/detective)) // Detective module exclusive.
+		return
+	var/battery_cost = 500
+	if(cyborg.cell.charge < battery_cost*2) // It costs to print, plus some more to hugbox them accidentally draining all of their power.
+		to_chat(user, span_danger("Automated safety measures prevent dispensing of zipties while under 1000 power!"))
+		return
+	if(!cyborg.cell.use(battery_cost)) // Somehow got past the hugbox check.
+		to_chat(user, span_danger("Failure printing zipties: power failure!"))
+		return
+	new /obj/item/restraints/handcuffs/cable/zipties(get_turf(user)) // Drop directly under the cyborg.
+	playsound(loc, 'sound/machines/click.ogg', 10, TRUE)
+		
 /obj/item/restraints/handcuffs/cable/zipties/used
 	desc = "A pair of broken zipties."
 	icon_state = "zipties_used"

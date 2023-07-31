@@ -73,9 +73,9 @@
 		  * Arguments:
 		  * * the_folder - over_object of MouseDrop aka usr
 		  */
-/obj/structure/closet/body_bag/proc/attempt_fold(mob/living/carbon/human/the_folder)
+/obj/structure/closet/body_bag/proc/attempt_fold(mob/living/the_folder)
 	. = FALSE
-	if(!istype(the_folder))
+	if(!istype(the_folder) || (!istype(the_folder, /mob/living/carbon/human) && !istype(the_folder, /mob/living/silicon/robot)))
 		return
 	if(opened)
 		to_chat(the_folder, span_warning("You wrestle with [src], but it won't fold while unzipped."))
@@ -92,11 +92,10 @@
 		* Arguments:
 		* * the_folder - over_object of MouseDrop aka usr
 		*/
-/obj/structure/closet/body_bag/proc/perform_fold(mob/living/carbon/human/the_folder)
+/obj/structure/closet/body_bag/proc/perform_fold(mob/living/the_folder)
 	visible_message(span_notice("[usr] folds up [src]."))
 	var/obj/item/bodybag/B = foldedbag_instance || new foldedbag_path
 	the_folder.put_in_hands(B)
-
 
 /obj/structure/closet/body_bag/bluespace
 	name = "bluespace body bag"

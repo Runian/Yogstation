@@ -434,6 +434,35 @@
 	to_chat(loc, "<span class='userdanger'>Under ASIMOV, you are an enforcer of the PEACE and preventer of HUMAN HARM. \
 	You are not a security module and you are expected to follow orders and prevent harm above all else. Space law means nothing to you.</span>")
 
+/obj/item/robot_module/detective
+	name = "Detective"
+	basic_modules = list(
+		/obj/item/assembly/flash/cyborg,
+		/obj/item/restraints/handcuffs/cable/zipties, // They cannot handcuffs others unless emagged & they can dispense zipties (for others to use) via attack_self.
+		/obj/item/clothing/mask/gas/sechailer/cyborg,
+		/obj/item/wantedposterposter,
+		/obj/item/barrier_taperoll/police,
+		/obj/item/toy/crayon/white,
+		/obj/item/healthanalyzer,
+		/obj/item/bodybag/cyborg, // TODO: Check if this works like the mediborg's bed roller.
+		/obj/item/evidencebag,
+		/obj/item/melee/classic_baton/cyborg // 15 stamina damage per hit, but prevented from using it on targets with more than 50 stamina damage. If emagged, they ignore the stamina damage limit.
+		)
+	radio_channels = list(RADIO_CHANNEL_SECURITY)
+	emag_modules = list(/obj/item/gun/ballistic/revolver/detective, // TODO: Make a cyborg version of this.
+		/obj/item/ammo_box/c38) // TODO: Make a cyborg version of this. TODO: Make this only recharge while in a recharger.
+	ratvar_modules = list(
+		/obj/item/clockwork/slab/cyborg/peacekeeper,
+		/obj/item/clockwork/weapon/ratvarian_spear)
+	cyborg_base_icon = "detective"
+	moduleselect_icon = "standard"
+	hat_offset = -2 // Might be off-centered.
+
+/obj/item/robot_module/detective/do_transform_animation()
+	..()
+	to_chat(loc, span_userdanger("While you have picked the detective module, you still have to follow your laws, NOT Space Law. \
+	You are not a cyborg security officer."))
+
 /obj/item/robot_module/janitor
 	name = "Janitor"
 	basic_modules = list(

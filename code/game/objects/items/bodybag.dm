@@ -10,6 +10,17 @@
 /obj/item/bodybag/attack_self(mob/user)
 	deploy_bodybag(user, user.loc)
 
+/obj/item/bodybag/attackby(obj/item/I, mob/living/user, params)
+	if(istype(I, /obj/item/bodybag/cyborg))
+		var/obj/item/bodybag/cyborg/cyborg_bodybag = I
+		if(cyborg_bodybag.loaded)
+			to_chat(user, span_warning("[cyborg_bodybag] already has a bodybag loaded!"))
+			return
+		user.visible_message(span_notice("[user] loads [src]."), span_notice("You load [src] into [cyborg_bodybag]."))
+		cyborg_bodybag.loaded = forceMove(I)
+		return
+	return ..()
+
 /obj/item/bodybag/afterattack(atom/target, mob/user, proximity)
 	. = ..()
 	if(proximity)
@@ -20,7 +31,11 @@
 	var/obj/structure/closet/body_bag/R = new unfoldedbag_path(location)
 	R.open(user)
 	R.add_fingerprint(user)
-	R.foldedbag_instance = src
+	if(istype(src, /obj/item/bodybag/cyborg))
+		var/obj/item/bodybag/cyborg/cyborg_bodybag = I
+		R.foldedbag_instance = cyborg_bodybag.loaded
+	else
+		R.foldedbag_instance = src
 	moveToNullspace()
 
 /obj/item/bodybag/suicide_act(mob/user)
@@ -33,6 +48,15 @@
 		playsound(src, 'sound/items/zip.ogg', 15, 1, -3)
 		return (OXYLOSS)
 	..()
+
+/obj/item/bodybag/cyborg
+	name = "body bag deployer"
+	desc = "An ejectable folded bag designed for the storage and transportation of cadavers. Must be collected or replaced after use."
+	var/obj/item/bodybag/loaded
+
+/obj/item/bodybag/cyborg/Initialize(mapload)
+	. = ..()
+	loaded = new(src)
 
 // Bluespace bodybag
 
