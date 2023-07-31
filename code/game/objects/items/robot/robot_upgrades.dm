@@ -947,3 +947,81 @@
 		var/obj/item/borg_snack_dispenser/medical/lollipopshooter = new(R.module)
 		R.module.basic_modules += lollipopshooter
 		R.module.add_module(lollipopshooter, FALSE, TRUE)
+
+
+/obj/item/borg/upgrade/aliensurgerykit
+	name = "medical cyborg alien surgical kit"
+	desc = "An upgrade to the surgery tools for medical cyborgs which replaces their current tools with the alien version of them. Requires advanced surgery tools first."
+	icon_state = "cyborg_upgrade5"
+	require_module = TRUE
+	module_type = /obj/item/robot_module/medical
+	module_flags = BORG_MODULE_MEDICAL
+
+/obj/item/borg/upgrade/aliensurgerykit/action(mob/living/silicon/robot/R, user = usr)
+	. = ..()
+	if(!.)
+		return FALSE
+
+	// Remove the advanced tools.
+	var/list/tools_to_remove = list(
+		/obj/item/scalpel/advanced,
+		/obj/item/retractor/advanced,
+		/obj/item/cautery/advanced
+	)
+
+	for(var/obj/item/tool in tools_to_remove)
+		tool =  locate() in R.module.modules
+		if(!tool)
+			to_chat(user, span_warning("This unit requires the advanced surgical kit upgrade first."))
+			return FALSE
+		R.module.remove_module(tool, TRUE)
+
+	// Give the alien tools.
+	var/list/tools_to_add = list(
+		/obj/item/scalpel/alien,
+		/obj/item/hemostat/alien,
+		/obj/item/retractor/alien,
+		/obj/item/circular_saw/alien,
+		/obj/item/surgicaldrill/alien,
+		/obj/item/cautery/alien
+	)
+
+	for(var/obj/item/tool in tools_to_add)
+		tool = locate() in R.module.modules
+		tool = new(R.module)
+		R.module.basic_modules += tool
+		R.module.add_module(tool, FALSE, TRUE)
+
+/obj/item/borg/upgrade/aliensurgerykit/deactivate(mob/living/silicon/robot/R, user = usr)
+	. = ..()
+	if(!.)
+		return FALSE
+	
+	// Remove the alien tools.
+	var/list/tools_to_remove = list(
+		/obj/item/scalpel/alien,
+		/obj/item/hemostat/alien,
+		/obj/item/retractor/alien,
+		/obj/item/circular_saw/alien,
+		/obj/item/surgicaldrill/alien,
+		/obj/item/cautery/alien
+	)
+
+	for(var/obj/item/tool in tools_to_remove)
+		tool =  locate() in R.module.modules
+		if(!tool)
+			to_chat(user, span_warning("This unit requires the advanced surgical kit upgrade first."))
+			return FALSE
+		R.module.remove_module(tool, TRUE)
+
+	var/list/tools_to_add = list(
+		/obj/item/scalpel/advanced,
+		/obj/item/retractor/advanced,
+		/obj/item/cautery/advanced
+	)
+
+	for(var/obj/item/tool in tools_to_add)
+		tool = locate() in R.module.modules
+		tool = new(R.module)
+		R.module.basic_modules += tool
+		R.module.add_module(tool, FALSE, TRUE)
