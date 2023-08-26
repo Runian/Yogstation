@@ -6,110 +6,142 @@
 	maxHealth = 100
 	health = 100
 	bubble_icon = "robot"
-	designation = "Default" ///used for displaying the prefix & getting the current module of cyborg
-	has_limbs = 1
+	/// Used for displaying the prefix & getting the current module of cyborg.
+	designation = "Default"
+	// TODO: Figure out what this is for. They don't exactly have limbs to worry about.
+	has_limbs = TRUE
 	hud_type = /datum/hud/robot
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 	light_system = MOVABLE_LIGHT
 	light_on = FALSE
 
+	/// Their custom name if their name is not default or not automatically generated.
 	var/custom_name = ""
+	/// Describes the origin of this cyborg, such as: "AI Shell" (AI), "Cyborg" (brain), "Android" (posi-brain)
 	var/braintype = "Cyborg"
+	/// The MMI belonging to this cyborg. Automatically given one during `Initialize`.
 	var/obj/item/mmi/mmi = null
 
-	var/throwcooldown = FALSE /// Used to determine cooldown for spin.
+	/// Used to determine cooldown for *spin.
+	var/throwcooldown = FALSE // Purpose of this was to prevent *spin spam back when hitting a wall was a stun and not a knockdown.
 
+	/// Is this an AI-shell?
 	var/shell = FALSE
+	/// Is this AI-shell currently being occupied by an AI?
 	var/deployed = FALSE
+	/// The body of the AI to return back to when the AI undeploys.
 	var/mob/living/silicon/ai/mainframe = null
 	var/datum/action/innate/undeployment/undeployment_action = new
 
-	/// the last health before updating - to check net change in health
+	/// The last health before updating. Used to check net change in health.
 	var/previous_health
 
-	//Hud stuff
+	// Hud stuff.
 	var/atom/movable/screen/inv1 = null
 	var/atom/movable/screen/inv2 = null
 	var/atom/movable/screen/inv3 = null
 	var/atom/movable/screen/thruster_button = null
 	var/atom/movable/screen/hands = null
 
-	var/shown_robot_modules = 0	///Used to determine whether they have the module menu shown or not
+	/// Used to determine whether they have the module menu shown or not.
+	var/shown_robot_modules = 0
 	var/atom/movable/screen/robot_modules_background
 
-//3 Modules can be activated at any one time.
+	/// The current module (the model) that they specialized into. Automatically set to `/obj/item/robot_module` during `Initialize`.
 	var/obj/item/robot_module/module = null
+	/// The active module (the item) that they are using out of their three held modules (the items).
 	var/obj/item/module_active = null
-	held_items = list(null, null, null) //we use held_items for the module holding, because that makes sense to do!
+	/// The three held modules, if any.
+	held_items = list(null, null, null) // We use held_items for the module holding because that makes sense to do!
 
-	/// For checking which modules are disabled or not.
+	/// Limits how many `held_items` there can be at a time. Can be: `BORG_MODULE_ALL_DISABLED`, `BORG_MODULE_TWO_DISABLED`, `BORG_MODULE_THREE_DISABLED`.
 	var/disabled_modules
 
 	var/mutable_appearance/eye_lights
 
+	/// The AI that this cyborg is enslaved to. Nullable.
 	var/mob/living/silicon/ai/connected_ai = null
+	/// The powercell that the cyborg is using. Nullable.
 	var/obj/item/stock_parts/cell/cell = null
 
 	var/opened = FALSE
+	/// The `world.time` since the last successful emag attempt.
 	var/emag_cooldown = 0
 	var/wiresexposed = FALSE
 
+	/// A random number for auto-generated names. Automatically set to a number between 1-999 during `Initialize`.
 	var/ident = 0
+	/// Is the cyborg's cover currently locked?
 	var/locked = TRUE
+	/// The required access to unlock the cover.
 	var/list/req_access = list(ACCESS_ROBO_CONTROL)
 
-	var/alarms = list("Motion"=list(), "Fire"=list(), "Atmosphere"=list(), "Power"=list(), "Camera"=list(), "Burglar"=list())
+	var/alarms = list("Motion" = list(), "Fire" = list(), "Atmosphere" = list(), "Power" = list(), "Camera" = list(), "Burglar" = list())
 
-	var/speed = 0 /// VTEC speed boost.
-	var/magpulse = FALSE /// Magboot-like effect.
-	var/ionpulse = FALSE /// Jetpack-like effect.
-	var/ionpulse_on = FALSE /// Jetpack-like effect.
-	var/datum/effect_system/trail_follow/ion/ion_trail /// Ionpulse effect.
+	/// Should this cyborg move around as if they're wearing mag-boots? This includes: pressure different resistance, no-gravity negation, heavy gravity, etc.
+	var/magpulse = FALSE
+	/// Should this cyborg have the ability to toggle their jetpack-like movement?
+	var/ionpulse = FALSE
+	/// Is their jetpack-like movement on or off?
+	var/ionpulse_on = FALSE
+	/// For leaving behind effects when actively using jetpack-like movement.
+	var/datum/effect_system/trail_follow/ion/ion_trail
 
-	var/low_power_mode = FALSE ///whether the robot has no charge left.
-	var/datum/effect_system/spark_spread/spark_system /// So they can initialize sparks whenever/N
+	/// Does this cyborg have no charge left?
+	var/low_power_mode = FALSE
+	/// For making spark effects whenever.
+	var/datum/effect_system/spark_spread/spark_system
 
-	var/lawupdate = TRUE ///Cyborgs will sync their laws with their AI by default
-	var/scrambledcodes = FALSE /// Used to determine if a borg shows up on the robotics console.  Setting to true hides them.
-	var/lockcharge ///Boolean of whether the borg is locked down or not
+	/// Should this cyborg's laws be updated to their master AI, if any, when `proc/lawsync()` is called?
+	var/lawupdate = TRUE
+	/// Should this cyborg appears on the robotics console?
+	var/scrambledcodes = FALSE
+	/// Is this cyborg currently locked down?
+	var/lockcharge = FALSE
 
+	/// Amount of toner remaining for printing out photo/images. Automatically set to `tonermax` during `Initialize`.
 	var/toner = 0
 	var/tonermax = 40
 
-	///If the lamp isn't broken.
+	/// Does the lamp work? If `FALSE`, prevents enabling of the lamp. If the lamp isn't broken.
 	var/lamp_functional = TRUE
-	///If the lamp is turned on
+	/// Is the lamp currently enabled? 
 	var/lamp_enabled = FALSE
-	///Set lamp color
+	/// What is the color of the lamp?
 	var/lamp_color = COLOR_WHITE
-	///Lamp brightness. Starts at 3, but can be 1 - 5.
+	/// Lamp's brightness. Starts at 3, but can be 1 - 5.
 	var/lamp_intensity = 3
-	///Lamp button reference
-	var/lamp_cooldown = 0 ///Flag for if the lamp is on cooldown after being forcibly disabled
+	/// Lamp button reference.
 	var/atom/movable/screen/robot/lamp/lampButton
 
+	/// The sight mode. Can be: `BORGMESON`, `BORGMATERIAL`, `BORGXRAY,` or `BORGTHERM`.
 	var/sight_mode = 0
 	hud_possible = list(ANTAG_HUD, DIAG_STAT_HUD, DIAG_HUD, DIAG_BATT_HUD, DIAG_TRACK_HUD)
 
 	var/atom/movable/screen/robot/modPC/interfaceButton
 
-	///Flash resistance
+	/// Does this cyborg have flash resistance? Lessens the effects of being flashed; does not completely negative it.
 	var/sensor_protection = FALSE
-
+	/// A list containing all upgrades that the Cyborg has. Should contain only `/obj/item/borg/upgrade` types.
 	var/list/upgrades = list()
-
+	/// How many things has this cyborg been expanded in size?
 	var/expansion_count = 0
+	
 	var/obj/item/hat
 	var/hat_offset = -3
-	var/list/blacklisted_hats = list( ///Hats that don't really work on borgos
-	/obj/item/clothing/head/helmet/space/santahat,
-	/obj/item/clothing/head/welding,
-	/obj/item/clothing/mob_holder, ///I am so very upset that this breaks things
-	/obj/item/clothing/head/helmet/space,
+	/// Hats that don't really work.
+	var/list/blacklisted_hats = list(
+		/obj/item/clothing/head/helmet/space/santahat,
+		/obj/item/clothing/head/welding,
+		/obj/item/clothing/mob_holder, // I am so very upset that this breaks things.
+		/obj/item/clothing/head/helmet/space,
 	)
-
+	
+	/// Can this cyborg be buckled to objects like chairs and beds?
 	can_buckle = TRUE
+	/// Should this cyborg be lying down (as in people can go over/ontop of them) when buckled to things that would should them lie down?
 	buckle_lying = FALSE
+	/// Types of mobs that can ride the cyborg.
 	var/static/list/can_ride_typecache = typecacheof(/mob/living/carbon/human)
 
 /mob/living/silicon/robot/get_cell()
@@ -575,13 +607,12 @@
 			return
 		if(!opened)
 			to_chat(user, span_warning("You need to open the panel to repair the headlamp!"))
-		else if(lamp_cooldown <= world.time && lamp_functional)
+		else if(lamp_functional)
 			to_chat(user, span_warning("The headlamp is already functional!"))
 		else
 			if(!user.temporarilyRemoveItemFromInventory(B))
 				to_chat(user, span_warning("[B] seems to be stuck to your hand. You'll have to find a different light."))
 				return
-			lamp_cooldown = 0
 			lamp_functional = TRUE
 			qdel(B)
 			to_chat(user, span_notice("You replace the headlamp bulb.")) //yogs end
@@ -1154,7 +1185,6 @@
 
 	upgrades.Cut()
 
-	speed = 0
 	ionpulse = FALSE
 	revert_shell()
 
