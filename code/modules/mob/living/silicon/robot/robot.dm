@@ -8,7 +8,7 @@
 	bubble_icon = "robot"
 	/// Used for displaying the prefix & getting the current module of cyborg.
 	designation = "Default"
-	// TODO: Figure out what this is for. They don't exactly have limbs to worry about.
+	// TODO: Figure out what this is for. They don't exactly have limbs to worry about. Used for atmos differences.
 	has_limbs = TRUE
 	hud_type = /datum/hud/robot
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
@@ -59,23 +59,33 @@
 
 	var/mutable_appearance/eye_lights
 
-	/// The AI that this cyborg is enslaved to. Nullable.
+	/// The AI that this cyborg is enslaved to, if any.
 	var/mob/living/silicon/ai/connected_ai = null
-	/// The powercell that the cyborg is using. Nullable.
-	var/obj/item/stock_parts/cell/cell = null
+	/// Should their laws be updated to their master AI when `proc/lawsync()` is called?
+	var/lawupdate = TRUE
+	/// Should they appear on the robotics console?
+	var/scrambledcodes = FALSE
+	/// Is this cyborg currently locked down?
+	var/lockcharge = FALSE
 
+	/// The powercell that the cyborg is using, if any.
+	var/obj/item/stock_parts/cell/cell = null
+	/// Does this cyborg have no charge left?
+	var/low_power_mode = FALSE
+
+	/// The required access to unlock the cover.
+	var/list/req_access = list(ACCESS_ROBO_CONTROL)
+	/// Is the cyborg's cover currently locked?
+	var/locked = TRUE
+	/// Is their cover opened?
 	var/opened = FALSE
+	/// Is their wires exposed?
+	var/wiresexposed = FALSE
 	/// The `world.time` since the last successful emag attempt.
 	var/emag_cooldown = 0
-	var/wiresexposed = FALSE
 
 	/// A random number for auto-generated names. Automatically set to a number between 1-999 during `Initialize`.
 	var/ident = 0
-	/// Is the cyborg's cover currently locked?
-	var/locked = TRUE
-	/// The required access to unlock the cover.
-	var/list/req_access = list(ACCESS_ROBO_CONTROL)
-
 	var/alarms = list("Motion" = list(), "Fire" = list(), "Atmosphere" = list(), "Power" = list(), "Camera" = list(), "Burglar" = list())
 
 	/// Should this cyborg move around as if they're wearing mag-boots? This includes: pressure different resistance, no-gravity negation, heavy gravity, etc.
@@ -86,24 +96,15 @@
 	var/ionpulse_on = FALSE
 	/// For leaving behind effects when actively using jetpack-like movement.
 	var/datum/effect_system/trail_follow/ion/ion_trail
-
-	/// Does this cyborg have no charge left?
-	var/low_power_mode = FALSE
 	/// For making spark effects whenever.
 	var/datum/effect_system/spark_spread/spark_system
 
-	/// Should this cyborg's laws be updated to their master AI, if any, when `proc/lawsync()` is called?
-	var/lawupdate = TRUE
-	/// Should this cyborg appears on the robotics console?
-	var/scrambledcodes = FALSE
-	/// Is this cyborg currently locked down?
-	var/lockcharge = FALSE
-
 	/// Amount of toner remaining for printing out photo/images. Automatically set to `tonermax` during `Initialize`.
 	var/toner = 0
+	/// The max amount of toner.
 	var/tonermax = 40
 
-	/// Does the lamp work? If `FALSE`, prevents enabling of the lamp. If the lamp isn't broken.
+	/// Can the lamp be toggled on?
 	var/lamp_functional = TRUE
 	/// Is the lamp currently enabled? 
 	var/lamp_enabled = FALSE
@@ -129,7 +130,7 @@
 	
 	var/obj/item/hat
 	var/hat_offset = -3
-	/// Hats that don't really work.
+	/// Hats that they cannot wear. Main reason to be blacklisted is if the hat doesn't really work.
 	var/list/blacklisted_hats = list(
 		/obj/item/clothing/head/helmet/space/santahat,
 		/obj/item/clothing/head/welding,
@@ -139,7 +140,7 @@
 	
 	/// Can this cyborg be buckled to objects like chairs and beds?
 	can_buckle = TRUE
-	/// Should this cyborg be lying down (as in people can go over/ontop of them) when buckled to things that would should them lie down?
+	/// Should this cyborg be lying down (as in people can go over/ontop of them) when buckled to things that would make them lie down?
 	buckle_lying = FALSE
 	/// Types of mobs that can ride the cyborg.
 	var/static/list/can_ride_typecache = typecacheof(/mob/living/carbon/human)
