@@ -227,6 +227,6 @@
 				F.set_light_on(FALSE)
 		if(istype(LO, /mob/living/silicon/robot))
 			var/mob/living/silicon/robot/borg = LO
-			if(!borg.lamp_cooldown)
+			if(borg.lamp_functional)
 				borg.smash_headlamp()
 	. = ..()

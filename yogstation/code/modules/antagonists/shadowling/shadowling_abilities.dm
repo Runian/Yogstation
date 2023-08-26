@@ -174,7 +174,7 @@
 			extinguish_mob(LO)
 		if(istype(LO, /mob/living/silicon/robot))
 			var/mob/living/silicon/robot/borg = LO
-			if(!borg.lamp_cooldown)
+			if(borg.lamp_functional)
 				borg.smash_headlamp()
 		if(istype(LO, /obj/machinery/camera))
 			LO.set_light(0)
