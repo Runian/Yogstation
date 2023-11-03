@@ -8,11 +8,11 @@
 	/// The initial price of this crate.
 	// The actual/real price can be influenced by things such as: high threat level in dynamic & traits that increase/decrease prices.
 	var/cost = 700
-	/// The ID must have this access in order to lock/unlock this crate. Automatically converted to list().
+	/// The ID must have this access in order to lock/unlock this crate.
 	var/access = FALSE
-	/// The ID must have one of these accesses in order to lock/unlock this crate. Automatically converted to list().
+	/// The ID must have one of these accesses in order to lock/unlock this crate.
 	var/access_any = FALSE
-	/// The ID must have this access in order to have this crate appear on NT IRN. Automatically converted to list().
+	/// The ID must have this access in order to have this crate appear on NT IRN.
 	var/access_view = FALSE
 	/// List of items that are in this crate.
 	var/list/contains = null
