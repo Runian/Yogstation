@@ -296,7 +296,7 @@
 	name = "Armor Crate"
 	desc = "Three vests of well-rounded, decently-protective armor. Requires Security access to open."
 	cost = 1000
-	access_view = FALSE
+	access_view = FALSE // Robotics can put in an order for this to build ED-209s.
 	contains = list(/obj/item/clothing/suit/armor/vest,
 					/obj/item/clothing/suit/armor/vest,
 					/obj/item/clothing/suit/armor/vest)
@@ -322,7 +322,7 @@
 	name = "Forensics Crate"
 	desc = "Stay hot on the criminal's heels with Nanotrasen's Detective Essentials(tm). Contains a forensics scanner, six evidence bags, camera, tape recorder, white crayon, and of course, a fedora. Requires Security access to open."
 	cost = 2000
-	access_view = ACCESS_MORGUE
+	access_view = ACCESS_FORENSICS_LOCKERS // Detective (and better) only.
 	contains = list(/obj/item/detective_scanner,
 					/obj/item/storage/box/evidence,
 					/obj/item/camera,
@@ -335,7 +335,7 @@
 	name = "Helmets Crate"
 	desc = "Contains three standard-issue brain buckets. Requires Security access to open."
 	cost = 1000
-	access_view = FALSE
+	access_view = FALSE // Robotics can put in an order for this to build ED-209s.
 	contains = list(/obj/item/clothing/head/helmet/sec,
 					/obj/item/clothing/head/helmet/sec,
 					/obj/item/clothing/head/helmet/sec)
