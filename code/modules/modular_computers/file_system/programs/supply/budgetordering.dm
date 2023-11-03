@@ -56,8 +56,10 @@
 			return FALSE
 		access = D.GetAccess()
 
-	if(paccess_to_check in access)
-		return TRUE
+	var/paccess_as_list = islist(paccess_to_check) ? paccess_to_check : list(paccess_to_check)
+	for(var/paccess in paccess_as_list)
+		if(paccess in access)
+			return TRUE
 
 	return FALSE
 
@@ -99,7 +101,7 @@
 	data["supplies"] = list()
 	for(var/pack in SSshuttle.supply_packs)
 		var/datum/supply_pack/P = SSshuttle.supply_packs[pack]
-		if(!is_visible_pack(usr, P.access_view , null, P.contraband) || P.hidden)
+		if(!is_visible_pack(usr, P.access_view, null, P.contraband) || P.hidden)
 			continue
 		if(!data["supplies"][P.group])
 			data["supplies"][P.group] = list(

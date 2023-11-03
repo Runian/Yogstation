@@ -60,9 +60,9 @@
 		C = new crate_type(A)
 		C.name = crate_name
 	if(access)
-		C.req_access = list(access)
+		C.req_access = islist(access) ? access : list(access)
 	if(access_any)
-		C.req_one_access = access_any
+		C.req_one_access = islist(access_any) ? access_any : list(access_any)
 
 	fill(C)
 	return C
