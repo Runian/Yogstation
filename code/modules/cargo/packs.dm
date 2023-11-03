@@ -1,9 +1,13 @@
 /datum/supply_pack
 	var/name = "Crate"
 	var/group = ""
+	// Is this crate visible to emagged consoles?
 	var/hidden = FALSE
+	// Is this crate visible to contraband consoles? Done via emagged or tampering with the console board.
 	var/contraband = FALSE
-	var/cost = 700 // Minimum cost, or infinite points are possible.
+	/// The initial price of this crate.
+	// The actual/real price can be influenced by things such as: high threat level in dynamic & traits that increase/decrease prices.
+	var/cost = 700
 	/// The ID must have ALL of these accesses in order to lock/unlock this crate.
 	var/access = FALSE
 	/// The ID must have ONE of these accesses in order to lock/unlock this crate.
