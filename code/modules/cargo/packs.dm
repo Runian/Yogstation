@@ -4,20 +4,33 @@
 	var/hidden = FALSE
 	var/contraband = FALSE
 	var/cost = 700 // Minimum cost, or infinite points are possible.
+	/// The ID must have ALL of these accesses in order to lock/unlock this crate.
 	var/access = FALSE
-	var/access_view = FALSE
+	/// The ID must have ONE of these accesses in order to lock/unlock this crate.
 	var/access_any = FALSE
+	/// The ID must have ALL of these accesses in order to: have this crate appear on NT IRN.
+	var/access_view = FALSE
+	/// List of items that are in this crate.
 	var/list/contains = null
+	/// The name of the crate when it appears in person.
 	var/crate_name = "crate"
-	var/desc = ""//no desc by default
+	/// The description of the crate when it appears in person.
+	var/desc = ""
 	var/crate_type = /obj/structure/closet/crate
-	var/dangerous = FALSE // Should we message admins?
+	/// Should we message the admins? Message is sent when the crate is offically purchased (e.g., shuttle going to station).
+	var/dangerous = FALSE
+	/// Is this an event/station goal/admin-enabled crate that you want to restrict purchasing on?
 	var/special = FALSE //Event/Station Goals/Admin enabled packs
+	/// Allows purchase of this special crate.
 	var/special_enabled = FALSE
-	var/DropPodOnly = FALSE//only usable by the Bluespace Drop Pod via the express cargo console
+	/// Is this visible only by express supply console?
+	var/DropPodOnly = FALSE
+	/// Was this crate spawned by an admin?
 	var/admin_spawned = FALSE
-	var/small_item = FALSE //Small items can be grouped into a single crate.
-	var/budget_radioactive = FALSE //Overwrite budget crate into radiation protective crate
+	/// Small items can be grouped into a single crate.
+	var/small_item = FALSE
+	/// Overrides the departmental's crate with a radiation protective crate.
+	var/budget_radioactive = FALSE
 
 /datum/supply_pack/proc/generate(atom/A, datum/bank_account/paying_account)
 	var/obj/structure/closet/crate/C
