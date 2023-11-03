@@ -8,11 +8,11 @@
 	/// The initial price of this crate.
 	// The actual/real price can be influenced by things such as: high threat level in dynamic & traits that increase/decrease prices.
 	var/cost = 700
-	/// The ID must have ALL of these accesses in order to lock/unlock this crate.
+	/// The ID must have this access in order to lock/unlock this crate.
 	var/access = FALSE
-	/// The ID must have ONE of these accesses in order to lock/unlock this crate.
+	/// The ID must have one of these accesses in order to lock/unlock this crate.
 	var/access_any = FALSE
-	/// The ID must have ALL of these accesses in order to: have this crate appear on NT IRN.
+	/// The ID must have this access in order to have this crate appear on NT IRN.
 	var/access_view = FALSE
 	/// List of items that are in this crate.
 	var/list/contains = null
@@ -289,13 +289,14 @@
 /datum/supply_pack/security
 	group = "Security"
 	access = ACCESS_SECURITY
+	access_view = ACCESS_SECURITY
 	crate_type = /obj/structure/closet/crate/secure/gear
 
 /datum/supply_pack/security/armor
 	name = "Armor Crate"
 	desc = "Three vests of well-rounded, decently-protective armor. Requires Security access to open."
 	cost = 1000
-	access_view = ACCESS_SECURITY
+	access_view = FALSE
 	contains = list(/obj/item/clothing/suit/armor/vest,
 					/obj/item/clothing/suit/armor/vest,
 					/obj/item/clothing/suit/armor/vest)
@@ -305,7 +306,6 @@
 	name = "Disabler Crate"
 	desc = "Three stamina-draining disabler weapons. Requires Security access to open."
 	cost = 1500
-	access_view = ACCESS_SECURITY
 	contains = list(/obj/item/gun/energy/disabler,
 					/obj/item/gun/energy/disabler,
 					/obj/item/gun/energy/disabler)
@@ -315,7 +315,6 @@
 	name = "Energy Pistol Single-Pack"
 	desc = "Contains one energy pistol for personal defense, capable of firing both lethal and nonlethal blasts of light. Requires Security access to open."
 	cost = 700
-	access_view = ACCESS_SECURITY
 	small_item = TRUE
 	contains = list(/obj/item/gun/energy/e_gun/mini)
 
@@ -336,6 +335,7 @@
 	name = "Helmets Crate"
 	desc = "Contains three standard-issue brain buckets. Requires Security access to open."
 	cost = 1000
+	access_view = FALSE
 	contains = list(/obj/item/clothing/head/helmet/sec,
 					/obj/item/clothing/head/helmet/sec,
 					/obj/item/clothing/head/helmet/sec)
@@ -362,7 +362,6 @@
 	name = "DRAGnet Crate"
 	desc = "Contains three \"Dynamic Rapid-Apprehension of the Guilty\" netting devices, a recent breakthrough in law enforcement prisoner management technology. Requires Security access to open."
 	cost = 1500
-	access_view = ACCESS_SECURITY
 	contains = list(/obj/item/gun/energy/e_gun/dragnet,
 					/obj/item/gun/energy/e_gun/dragnet,
 					/obj/item/gun/energy/e_gun/dragnet)
@@ -372,7 +371,6 @@
 	name = "NT-USP Crate"
 	desc = "Three stamina-draining ballistic weapons, along with three extra magazines. Requires Security access to open."
 	cost = 2000
-	access_view = ACCESS_SECURITY
 	contains = list(/obj/item/gun/ballistic/automatic/pistol/ntusp,
 					/obj/item/gun/ballistic/automatic/pistol/ntusp,
 					/obj/item/gun/ballistic/automatic/pistol/ntusp,
@@ -385,7 +383,6 @@
 	name = "Vatra M38 Pistol Crate"
 	desc = "A pack containing three Vatra M38s, an unusual handgun which loads .38 special designed for unarmored targets, loaded with non-lethal rounds. Three spare magazines are included. Requires Security access to open."
 	cost = 4000
-	access = ACCESS_SECURITY
 	contains = list(/obj/item/gun/ballistic/automatic/pistol/v38/less_lethal,
 					/obj/item/gun/ballistic/automatic/pistol/v38/less_lethal,
 					/obj/item/gun/ballistic/automatic/pistol/v38/less_lethal,
@@ -399,7 +396,6 @@
 	name = "TRAC Revolver Crate"
 	desc = "Contains one Caldwell Tracking Revolver and two speed loaders for it. Requires Security access to open."
 	cost = 4000
-	access = ACCESS_SECURITY
 	contains = list(/obj/item/gun/ballistic/revolver/tracking,
 					/obj/item/ammo_box/tra32,
 					/obj/item/ammo_box/tra32)
@@ -409,6 +405,7 @@
 	name = "SecTech Supply Crate"
 	desc = "Officer Paul bought all the donuts? Then refill the security vendor with ths crate."
 	cost = 1500
+	access_view = FALSE
 	contains = list(/obj/item/vending_refill/security)
 	crate_name = "SecTech supply crate"
 
