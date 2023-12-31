@@ -539,3 +539,210 @@
 	slowdown_set = 0.4 // Very slow
 	armor = list(MELEE = 55, BULLET = 60, LASER = 60, ENERGY = 40, BOMB = 40, BIO = 0, RAD = 0, FIRE = 65, ACID = 75, WOUND = 50)	//Walking tank
 	partial_coverage = LEGS|ARMS
+
+/// An chest armor that grants a battery-rechargable shield with a focus on anti-range at the cost of armor.
+/obj/item/clothing/suit/armor/batteryshield
+	name = "battery shield armor"
+	desc = "An experimental battery-changed energy shield that blocks most projectiles and thrown objects with great ease, but provides no resistance against melee attacks."
+	icon_state = "reactiveoff"
+	icon = 'icons/obj/clothing/suits.dmi'
+	w_class = WEIGHT_CLASS_BULKY
+	armor = list(MELEE = -20, BULLET = 0, LASER = 0, ENERGY = 0, BOMB = 0, BIO = 0, RAD = 0, FIRE = 100, ACID = 100)
+	/// What power cell is the shield drawing from?
+	var/obj/item/stock_parts/cell/power_cell = /obj/item/stock_parts/cell/high
+	/// Who is wearing this?
+	var/mob/living/carbon/human/wearer
+	/// Is it on and working?
+	var/toggled = FALSE
+	/// Is the maintenance panel open?
+	var/maintenance = FALSE
+	/// Does this block projectiles? E.g. bullets & lasers.
+	var/blocks_projs = TRUE
+	/// Does this block items that are thrown/collide with the armor? E.g. thrown toolboxes, potted plants.
+	var/blocks_throws = TRUE
+	/// Does this block melee attacks?
+	var/blocks_melees = FALSE
+	/// Does this prevent the user from shooting any guns?
+	var/prevent_gun_usage = FALSE // Personally would of wanted the projectiles to deflect right into their own face, but this is okay.
+	
+/obj/item/clothing/suit/armor/batteryshield/Initialize(mapload)
+	. = ..()
+	power_cell = new power_cell(null)
+
+/obj/item/clothing/suit/armor/batteryshield/examine(mob/user)
+	. = ..()
+	if(power_cell)
+		. += "The charge meter reads [round(power_cell.percent() )]%."
+
+/obj/item/clothing/suit/armor/batteryshield/attack_self(mob/user)
+	. = ..()
+	if(maintenance)
+		if(!power_cell)
+			to_chat(user, span_notice("There's no power cell installed in \the [src]!"))
+			return
+		to_chat(user, span_notice("You remove \the [power_cell] from [src]."))
+		power_cell.forceMove(drop_location())
+		power_cell = null
+		return
+	// No toggling without a battery.
+	if(!power_cell)
+		to_chat(user, span_notice("There's no power cell installed in \the [src]!"))
+		return
+	if(toggled)
+		toggle_off(user)
+		return
+	if(power_cell.charge <= 0)
+		to_chat(user, span_warning("\The [src] fails to activate!"))
+		return
+	// Going to trigger the explosion just for the fun of it.
+	if(power_cell.rigged)
+		power_cell.use(1)
+		// For if it actually blew up.
+		if(QDELETED(power_cell))
+			power_cell = null
+			return
+	toggle_on(user)
+
+/obj/item/clothing/suit/armor/batteryshield/attackby(obj/item/W, mob/user, params)
+	if(!istype(W, /obj/item/stock_parts/cell))
+		return ..()
+	if(maintenance)
+		// Already one inside.
+		if(power_cell)
+			to_chat(user, span_notice("You have already inserted \a cell!"))
+			return
+		// Can't transfer.
+		if(!user.transferItemToLoc(W, src))
+			return
+		// Cell inserted.
+		power_cell = W
+		to_chat(user, span_notice("You insert \the [power_cell]."))
+		return
+	. = ..()
+
+/obj/item/clothing/suit/armor/batteryshield/screwdriver_act(mob/living/user, obj/item/I)
+	. = ..()
+	if(.)
+		return TRUE
+	if(toggled)
+		to_chat(user, span_warning("\The [src] is on! Turn it off first!"))
+		return TRUE
+
+	I.play_tool_sound(src)
+
+	maintenance = !maintenance
+	if(maintenance)
+		to_chat(user, span_notice("You open \the [src]'s maintenance panel."))
+		return TRUE
+	to_chat(user, span_notice("You close \the [src]'s maintenance panel."))
+	return TRUE
+
+/obj/item/clothing/suit/armor/batteryshield/hit_reaction(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", final_block_chance = 0, damage = 0, attack_type = MELEE_ATTACK)
+	if(!toggled)
+		return FALSE
+
+	var/blocked = FALSE
+	var/display_deflect_msg = TRUE
+
+	// Blocking projectiles.
+	if(blocks_projs && isprojectile(hitby))
+		var/obj/projectile/proj = hitby
+		var/cost = !proj.nodamage ? (proj.damage * 200) : 0 // Each point of damage takes 0.2 kw.
+		power_cell.use(cost)
+		blocked = TRUE
+	// Blocking thrown objects.
+	else if(blocks_throws && hitby.throwing)
+		if(isobj(hitby))
+			var/obj/obj = hitby
+			var/cost = obj.throwforce * 200 // Each point of damage takes 0.2 kw.
+			power_cell.use(cost)
+			blocked = TRUE
+	// All else is assumed to be melee.
+	else if(blocks_melees && !hitby.throwing)
+		// Each point of damage takes 1.0 kw; the goal is to be anti-range, not anti-melee.
+		// If something falls through the crack, just make it very costly on shields.
+		var/cost = 8000
+		if(isitem(hitby))
+			var/obj/item/item = hitby
+			cost = 1000 * item.force
+		if(ishuman(hitby)) // Trying to touch with their hands.
+			var/mob/living/carbon/human/human = hitby
+			cost = 1000 * rand(human.get_punchdamagelow(), human.get_punchdamagehigh())
+			display_deflect_msg = FALSE // A different message is already shown.
+		if(isanimal(hitby))
+			var/mob/living/simple_animal/animal = hitby
+			cost = 1000 * rand(animal.melee_damage_lower, animal.melee_damage_upper)
+		power_cell.use(cost)
+		blocked = TRUE
+
+	if(!blocked)
+		return FALSE
+	
+	var/datum/effect_system/spark_spread/s = new
+	s.set_up(2, 1, src)
+	s.start()
+	if(display_deflect_msg)
+		owner.visible_message(span_danger("[owner]'s shields deflect [attack_text] in a shower of sparks!"))
+
+	if(power_cell.charge <= 0)
+		owner.visible_message(span_warning("[owner]'s [src] overloads!"), span_boldwarning("Your [src] overloads!"))
+		toggle_off(owner)
+		wearer.update_inv_wear_suit()
+	return TRUE
+
+/obj/item/clothing/suit/armor/batteryshield/emp_act(severity)
+	. = ..()
+	if (. & EMP_PROTECT_SELF)
+		return
+	if(power_cell)
+		power_cell.emp_act(severity)
+	if(toggled)
+		toggle_off()
+		src.visible_message(span_warning("\The [src] overloads!"))
+		wearer.update_inv_wear_suit()
+
+/obj/item/clothing/suit/armor/batteryshield/equipped(mob/user, slot)
+	. = ..()
+	if(!(slot & ITEM_SLOT_OCLOTHING))
+		return
+	if(!ishuman(user))
+		return
+	
+	wearer = user
+	if(prevent_gun_usage)
+		ADD_TRAIT(wearer, TRAIT_NOGUNS, "battery shield")
+
+/obj/item/clothing/suit/armor/batteryshield/dropped(mob/M)
+	if(wearer)
+		if(prevent_gun_usage)
+			REMOVE_TRAIT(wearer, TRAIT_NOGUNS, "battery shield")
+		wearer = null
+	return ..()
+
+/obj/item/clothing/suit/armor/batteryshield/worn_overlays(isinhands)
+	. = list()
+	if(!isinhands)
+		. += mutable_appearance('icons/effects/effects.dmi', toggled ? "shield-old" : "broken", MOB_LAYER + 0.01)
+
+/obj/item/clothing/suit/armor/batteryshield/proc/toggle_on(mob/user)
+	toggled = TRUE
+	if(user)
+		to_chat(user, span_notice("\The [src] is now active."))
+	icon_state = "reactive"
+	item_state = "reactive"
+
+/obj/item/clothing/suit/armor/batteryshield/proc/toggle_off(mob/user)
+	toggled = FALSE
+	if(user)
+		to_chat(user, span_notice("\The [src] is now inactive."))
+	icon_state = "reactiveoff"
+	item_state = "reactiveoff"
+
+/obj/item/clothing/suit/armor/batteryshield/admin
+	name = "omega battery shield armor"
+	desc = "A suit of armor that blocks all projectiles and thrown objects with an infinite recharging battery."
+	power_cell = /obj/item/stock_parts/cell/infinite
+
+/obj/item/clothing/suit/armor/batteryshield/admin/screwdriver_act(mob/living/user, obj/item/I)
+	// Do not let them enter maintenance mode and remove the battery.
+	return TRUE
