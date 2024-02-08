@@ -178,7 +178,7 @@
 	data["allies"] = malfunction_flavor["allies"]
 	data["goal"] = malfunction_flavor["goal"]
 	data["objectives"] = get_objectives()
-	data["can_change_objective"] = can_assign_self_objectives
+	data["can_change_objective"] = FALSE // todo: remove this
 
 	//module picker data
 
@@ -238,7 +238,9 @@
 		for(var/datum/objective/objective in objectives)
 			if(!objective.check_completion())
 				malf_ai_won = FALSE
-			objectives_text += "<br><B>Objective #[count]</B>: [objective.explanation_text] [objective.get_roundend_success_suffix()]"
+				objectives_text += "<br><B>Objective #[count]</B>: [objective.explanation_text] [span_redtext("Fail.")]"
+			else
+				objectives_text += "<br><B>Objective #[count]</B>: [objective.explanation_text] [span_greentext("Success!")]"
 			count++
 
 	result += objectives_text
