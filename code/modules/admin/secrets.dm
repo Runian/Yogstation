@@ -314,28 +314,27 @@
 				return
 			var/tc_amount = input(mob_user, "How much TC should they all get?") as null|num
 			SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Traitor All", "[objective]"))
-			for(var/mob/living/H in GLOB.player_list)
-				if(!(ishuman(H)||istype(H, /mob/living/silicon/)))
+			for(var/mob/living/player in GLOB.player_list)
+				if(!(ishuman(player)||istype(player, /mob/living/silicon/)))
 					continue
-				if(H.stat == DEAD || !H.client || !H.mind || ispAI(H))
+				if(player.stat == DEAD || !player.mind || ispAI(player))
 					continue
-				if(is_special_character(H))
+				if(is_special_character(player))
 					continue
-				var/datum/antagonist/traitor/T = new()
-				T.give_objectives = FALSE
+				var/datum/antagonist/traitor/traitor_datum = new()
+				traitor_datum.give_objectives = FALSE
 				var/datum/objective/new_objective = new
-				new_objective.owner = H
+				new_objective.owner = player
 				new_objective.explanation_text = objective
-				T.add_objective(new_objective)
-				H.mind.add_antag_datum(T)
+				traitor_datum.objectives += new_objective
+				player.mind.add_antag_datum(traitor_datum)
 				if(tc_amount && tc_amount != TELECRYSTALS_DEFAULT)//if the admin chose a different starting TC amount
-					if(T.uplink_holder)
-						var/datum/component/uplink/uplink = T.uplink_holder.GetComponent(/datum/component/uplink)
+					if(traitor_datum.uplink_holder)
+						var/datum/component/uplink/uplink = traitor_datum.uplink_holder.GetComponent(/datum/component/uplink)
 						if(uplink)
 							uplink.telecrystals = tc_amount
-			message_admins(span_adminnotice("[key_name_admin(mob_user)] used everyone is a traitor secret. Objective is [objective]"))
-			log_admin("[key_name(mob_user)] used everyone is a traitor secret. Objective is [objective]")
-
+			message_admins("<span class='adminnotice'>[key_name_admin(holder)] used everyone is a traitor secret. Objective is [objective]</span>")
+			log_admin("[key_name(holder)] used everyone is a traitor secret. Objective is [objective]")
 		if("iaa_all")
 			if(!check_rights_for(rights, R_FUN))
 				return
