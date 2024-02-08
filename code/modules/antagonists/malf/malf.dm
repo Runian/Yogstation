@@ -74,7 +74,7 @@
 		kill_objective.find_target()
 		objectives += kill_objective
 
-	var/datum/objective/survive/malf/dont_die_objective = new
+	var/datum/objective/survive/exist/dont_die_objective = new
 	dont_die_objective.owner = owner
 	objectives += dont_die_objective
 

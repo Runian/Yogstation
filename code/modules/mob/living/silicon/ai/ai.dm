@@ -90,6 +90,8 @@
 	var/mob/living/silicon/robot/deployed_shell = null //For shell control
 	var/datum/action/innate/deploy_shell/deploy_action = new
 	var/datum/action/innate/deploy_last_shell/redeploy_action = new
+	var/datum/action/innate/choose_modules/modules_action
+
 	var/chnotify = 0
 
 	var/multicam_on = FALSE
@@ -722,12 +724,6 @@
 //End of code by Mord_Sith and others :^)
 //yogs end
 
-/mob/living/silicon/ai/proc/choose_modules()
-	set category = "Malfunction"
-	set name = "Choose Module"
-
-	malf_picker.ui_interact(src)
-
 /mob/living/silicon/ai/proc/ai_statuschange()
 	set category = "AI Commands"
 	set name = "AI Status"
@@ -985,15 +981,6 @@
 		for(var/mob/living/silicon/robot/Slave in connected_robots)
 			Slave.show_laws()
 
-/mob/living/silicon/ai/proc/add_malf_picker()
-	to_chat(src, "In the top right corner of the screen you will find the Malfunctions tab, where you can purchase various abilities, from upgraded surveillance to station ending doomsday devices.")
-	to_chat(src, "You are also capable of hacking APCs, which grants you more points to spend on your Malfunction powers. The drawback is that a hacked APC will give you away if spotted by the crew. Hacking an APC takes 30 seconds.")
-	to_chat(src, span_userdanger("In addition you are able to disallow downloading of your memory banks by using the 'Toggle Download' verb in the malfunction tab. This has a visual tell so do not do it without reason."))
-
-	view_core() //A BYOND bug requires you to be viewing your core before your verbs update
-	add_verb_ai(list(/mob/living/silicon/ai/proc/choose_modules, /mob/living/silicon/ai/proc/toggle_download))
-	malf_picker = new /datum/module_picker
-
 
 /mob/living/silicon/ai/reset_perspective(atom/A)
 	if(camera_light_on)
@@ -1030,29 +1017,6 @@
 	if(.) //successfully ressuscitated from death
 		set_core_display_icon(display_icon_override)
 		set_eyeobj_visible(TRUE)
-
-/mob/living/silicon/ai/proc/malfhacked(obj/machinery/power/apc/apc)
-	malfhack = null
-	malfhacking = 0
-	clear_alert("hackingapc")
-
-	if(!istype(apc) || QDELETED(apc) || apc.stat & BROKEN)
-		to_chat(src, span_danger("Hack aborted. The designated APC no longer exists on the power network."))
-		playsound(get_turf(src), 'sound/machines/buzz-two.ogg', 50, 1, ignore_walls = FALSE)
-	else if(apc.aidisabled)
-		to_chat(src, span_danger("Hack aborted. \The [apc] is no longer responding to our systems."))
-		playsound(get_turf(src), 'sound/machines/buzz-sigh.ogg', 50, 1, ignore_walls = FALSE)
-	else
-		malf_picker.processing_time += 5
-
-		apc.malfai = parent || src
-		apc.malfhack = TRUE
-		apc.locked = TRUE
-		apc.coverlocked = TRUE
-
-		playsound(get_turf(src), 'sound/machines/ding.ogg', 50, 1, ignore_walls = FALSE)
-		to_chat(src, "Hack complete. \The [apc] is now under your exclusive control.")
-		apc.update_appearance(UPDATE_ICON)
 
 /mob/living/silicon/ai/verb/deploy_to_shell(mob/living/silicon/robot/target)
 	set category = "AI Commands"
@@ -1141,3 +1105,73 @@
 /mob/living/silicon/ai/proc/send_borg_death_warning(mob/living/silicon/robot/R)
 	to_chat(src, span_warning("Unit [R] has stopped sending telemetry updates."))
 	playsound_local(src, 'sound/machines/engine_alert2.ogg', 30)
+
+/*
+ * Malfunctioning
+*/
+
+/// Grants malfunctioning abilities to the AI.
+/mob/living/silicon/ai/proc/add_malf_picker()
+	to_chat(src, "In the top right corner of the screen you will find the Malfunctions tab, where you can purchase various abilities, from upgraded surveillance to station ending doomsday devices.")
+	to_chat(src, "You are also capable of hacking APCs, which grants you more points to spend on your Malfunction powers. The drawback is that a hacked APC will give you away if spotted by the crew. Hacking an APC takes 30 seconds.")
+	to_chat(src, span_userdanger("In addition you are able to disallow downloading of your memory banks by using the 'Toggle Download' verb in the malfunction tab. This has a visual tell so do not do it without reason."))
+
+	view_core() //A BYOND bug requires you to be viewing your core before your verbs update
+	add_verb_ai(list(/mob/living/silicon/ai/proc/choose_modules, /mob/living/silicon/ai/proc/toggle_download))
+	malf_picker = new /datum/module_picker
+
+/// Removes all malfunction-related abilities from the AI.
+/mob/living/silicon/ai/proc/remove_malf_abilities()
+	QDEL_NULL(modules_action)
+	for(var/datum/ai_module/AM in current_modules)
+		for(var/datum/action/A in actions)
+			if(istype(A, initial(AM.power_type)))
+				qdel(A)
+
+/// Button to open menu that allows purchasing of malf modules.
+/mob/living/silicon/ai/proc/choose_modules()
+	set category = "Malfunction"
+	set name = "Choose Module"
+
+	malf_picker.ui_interact(src)
+
+/datum/action/innate/choose_modules
+	name = "Malfunction Modules"
+	desc = "Choose from a variety of insidious modules to aid you."
+	button_icon = 'icons/mob/actions/actions_AI.dmi'
+	button_icon_state = "modules_menu"
+	var/datum/module_picker/module_picker
+
+/datum/action/innate/choose_modules/New(picker)
+	. = ..()
+	if(istype(picker, /datum/module_picker))
+		module_picker = picker
+	else
+		CRASH("choose_modules action created with non module picker")
+
+/datum/action/innate/choose_modules/Activate()
+	module_picker.ui_interact(owner)
+
+/// A proc to callback for when the AI has (un)successfully hacked an APC.
+/mob/living/silicon/ai/proc/malfhacked(obj/machinery/power/apc/apc)
+	malfhack = null
+	malfhacking = 0
+	clear_alert("hackingapc")
+
+	if(!istype(apc) || QDELETED(apc) || apc.stat & BROKEN)
+		to_chat(src, span_danger("Hack aborted. The designated APC no longer exists on the power network."))
+		playsound(get_turf(src), 'sound/machines/buzz-two.ogg', 50, 1, ignore_walls = FALSE)
+	else if(apc.aidisabled)
+		to_chat(src, span_danger("Hack aborted. \The [apc] is no longer responding to our systems."))
+		playsound(get_turf(src), 'sound/machines/buzz-sigh.ogg', 50, 1, ignore_walls = FALSE)
+	else
+		malf_picker.processing_time += 5
+
+		apc.malfai = parent || src
+		apc.malfhack = TRUE
+		apc.locked = TRUE
+		apc.coverlocked = TRUE
+
+		playsound(get_turf(src), 'sound/machines/ding.ogg', 50, 1, ignore_walls = FALSE)
+		to_chat(src, "Hack complete. \The [apc] is now under your exclusive control.")
+		apc.update_appearance(UPDATE_ICON)
