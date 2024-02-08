@@ -469,14 +469,13 @@
  */
 /atom/proc/emp_act(severity)
 	var/protection = SEND_SIGNAL(src, COMSIG_ATOM_PRE_EMP_ACT, severity)
-	// Old trait-based EMP protection; update to modern when possible:
+	// Trait-based EMP protection for when EMP protection might stack and removal of one shouldn't remove them all.
 	if(HAS_TRAIT(src, TRAIT_EMPPROOF_CONTENTS))
 		protection |= EMP_PROTECT_CONTENTS
+		protection |= EMP_PROTECT_WIRES
 	if(HAS_TRAIT(src, TRAIT_EMPPROOF_SELF))
 		protection |= EMP_PROTECT_SELF
-	if(!(protection & EMP_PROTECT_CONTENTS) && istype(wires))
-		wires.emp_pulse()
-	else if(!(protection & EMP_PROTECT_WIRES) && istype(wires))
+	if(!(protection & EMP_PROTECT_WIRES) && istype(wires))
 		wires.emp_pulse()
 
 	SEND_SIGNAL(src, COMSIG_ATOM_EMP_ACT, severity, protection)
