@@ -469,7 +469,7 @@
  */
 /atom/proc/emp_act(severity)
 	var/protection = SEND_SIGNAL(src, COMSIG_ATOM_PRE_EMP_ACT, severity)
-	// Trait-based EMP protection for when EMP protection might stack and removal of one shouldn't remove them all.
+	// Trait-based EMP protection for when EMP protection be temporary/stack and the removal of one shouldn't remove them all.
 	if(HAS_TRAIT(src, TRAIT_EMPPROOF_CONTENTS))
 		protection |= EMP_PROTECT_CONTENTS
 		protection |= EMP_PROTECT_WIRES
