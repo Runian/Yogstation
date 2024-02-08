@@ -2,24 +2,27 @@
 #define DOOMSDAY_ANNOUNCE_INTERVAL (60 SECONDS)
 #define DOOMSDAY_DATACORE_TIME (1 MINUTES)
 
+#define SFX_SPARKS "sparks"
+
 GLOBAL_LIST_INIT(blacklisted_malf_machines, typecacheof(list(
-		/obj/machinery/field/containment,
-		/obj/machinery/power/supermatter_crystal,
-		/obj/machinery/doomsday_device,
-		/obj/machinery/nuclearbomb,
-		/obj/machinery/nuclearbomb/selfdestruct,
-		/obj/machinery/nuclearbomb/syndicate,
-		/obj/machinery/syndicatebomb,
-		/obj/machinery/syndicatebomb/badmin,
-		/obj/machinery/syndicatebomb/badmin/clown,
-		/obj/machinery/syndicatebomb/empty,
-		/obj/machinery/syndicatebomb/self_destruct,
-		/obj/machinery/syndicatebomb/training
-	)))
+	/obj/machinery/field/containment,
+	/obj/machinery/power/supermatter_crystal,
+	/obj/machinery/doomsday_device,
+	/obj/machinery/nuclearbomb,
+	/obj/machinery/nuclearbomb/selfdestruct,
+	/obj/machinery/nuclearbomb/syndicate,
+	/obj/machinery/syndicatebomb,
+	/obj/machinery/syndicatebomb/badmin,
+	/obj/machinery/syndicatebomb/badmin/clown,
+	/obj/machinery/syndicatebomb/empty,
+	/obj/machinery/syndicatebomb/self_destruct,
+	/obj/machinery/syndicatebomb/training
+)))
 
 GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module))
 
 /// The malf AI action subtype. All malf actions are subtypes of this.
+// Note: Not all actions are necessarily malf as AI Rework uses these for non-malf AI actions.
 /datum/action/innate/ai
 	name = "AI Action"
 	desc = "You aren't entirely sure what this does, but it's very beepy and boopy."
@@ -30,6 +33,10 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module))
 	var/mob/living/silicon/ai/owner_AI
 	/// If we have multiple uses of the same power.
 	var/uses
+	/// The maximum amount of uses that can be stored at a time. Only used for AI Rework / non-malf AI.
+	var/max_uses
+	/// If the action should self-delete when reaching zero uses. Only used for AI Rework / non-malf AI.
+	var/delete_on_empty = TRUE
 	/// If we automatically use up uses on each activation.
 	var/auto_use_uses = TRUE
 	/// If applicable, the time in deciseconds we have to wait before using any more modules.
@@ -62,7 +69,8 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module))
 	if(uses <= 0)
 		if(initial(uses) > 1) //no need to tell 'em if it was one-use anyway!
 			to_chat(owner, span_warning("[name] has run out of uses!"))
-		qdel(src)
+		if(delete_on_empty)
+			qdel(src)
 
 /// Framework for ranged abilities that can have different effects by left-clicking stuff.
 /datum/action/innate/ai/ranged
@@ -553,36 +561,6 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module))
 		return
 	desc = "[initial(desc)] It has [uses] use\s remaining."
 	build_all_button_icons()
-
-/// HIGH IMPACT HONKING
-/datum/ai_module/destructive/megahonk
-	name = "Percussive Intercomm Interference"
-	description = "Emit a debilitatingly percussive auditory blast through the station intercoms. Does not overpower hearing protection. Two uses per purchase."
-	cost = 20
-	power_type = /datum/action/innate/ai/honk
-	unlock_text = span_notice("You upload a sinister sound file into every intercom...")
-	unlock_sound = 'sound/items/airhorn.ogg'
-
-/datum/action/innate/ai/honk
-	name = "Percussive Intercomm Interference"
-	desc = "Rock the station's intercom system with an obnoxious HONK!"
-	button_icon_state = "intercom"
-	uses = 2
-
-/datum/action/innate/ai/honk/Activate()
-	to_chat(owner, span_clown("The intercom system plays your prepared file as commanded."))
-	for(var/obj/item/radio/intercom/found_intercom as anything in GLOB.intercoms_list)
-		if(!found_intercom.is_on() || !found_intercom.get_listening() || found_intercom.wires.is_cut(WIRE_RX)) //Only operating intercoms play the honk
-			continue
-		found_intercom.audible_message(message = "[found_intercom] crackles for a split second.", hearing_distance = 3)
-		playsound(found_intercom, 'sound/items/airhorn.ogg', 100, TRUE)
-		for(var/mob/living/carbon/honk_victim in ohearers(6, found_intercom))
-			var/turf/victim_turf = get_turf(honk_victim)
-			if(isspaceturf(victim_turf) && !victim_turf.Adjacent(found_intercom)) //Prevents getting honked in space
-				continue
-			if(honk_victim.soundbang_act(intensity = 1, stun_pwr = 20, damage_pwr = 30, deafen_pwr = 60)) //Ear protection will prevent these effects
-				honk_victim.set_jitter_if_lower(120 SECONDS)
-				to_chat(honk_victim, span_clown("HOOOOONK!"))
 
 /// Robotic Factory: Places a large machine that converts humans that go through it into cyborgs. Unlocking this ability removes shunting.
 /datum/ai_module/utility/place_cyborg_transformer
@@ -1082,205 +1060,6 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module))
 		build_all_button_icons()
 	else
 		unset_ranged_ability(ai_caller, span_warning("Out of uses!"))
-
-	return TRUE
-
-/datum/ai_module/utility/core_tilt
-	name = "Rolling Servos"
-	description = "Allows you to slowly roll around, crushing anything in your way with your bulk."
-	cost = 10
-	one_purchase = FALSE
-	power_type = /datum/action/innate/ai/ranged/core_tilt
-	unlock_sound = 'sound/effects/bang.ogg'
-	unlock_text = span_notice("You gain the ability to roll over and crush anything in your way.")
-
-/datum/action/innate/ai/ranged/core_tilt
-	name = "Roll over"
-	button_icon_state = "roll_over"
-	desc = "Allows you to roll over in the direction of your choosing, crushing anything in your way."
-	auto_use_uses = FALSE
-	ranged_mousepointer = 'icons/effects/mouse_pointers/supplypod_target.dmi'
-	uses = 20
-	COOLDOWN_DECLARE(time_til_next_tilt)
-	enable_text = span_notice("Your inner servos shift as you prepare to roll around. Click adjacent tiles to roll onto them!")
-	disable_text = span_notice("You disengage your rolling protocols.")
-
-	/// How long does it take for us to roll?
-	var/roll_over_time = MALF_AI_ROLL_TIME
-	/// On top of [roll_over_time], how long does it take for the ability to cooldown?
-	var/roll_over_cooldown = MALF_AI_ROLL_COOLDOWN
-
-/datum/action/innate/ai/ranged/core_tilt/New()
-	. = ..()
-	desc = "[desc] It has [uses] use\s remaining."
-
-/datum/action/innate/ai/ranged/core_tilt/do_ability(mob/living/caller, atom/clicked_on)
-
-	if (!COOLDOWN_FINISHED(src, time_til_next_tilt))
-		caller.balloon_alert(caller, "on cooldown!")
-		return FALSE
-
-	if (!isAI(caller))
-		return FALSE
-	var/mob/living/silicon/ai/ai_caller = caller
-
-	if (ai_caller.incapacitated() || !isturf(ai_caller.loc))
-		return FALSE
-
-	var/turf/target = get_turf(clicked_on)
-	if (isnull(target))
-		return FALSE
-
-	if (target == ai_caller.loc)
-		target.balloon_alert(ai_caller, "can't roll on yourself!")
-		return FALSE
-
-	var/picked_dir = get_dir(ai_caller, target)
-	if (!picked_dir)
-		return FALSE
-	var/turf/temp_target = get_step(ai_caller, picked_dir) // we can move during the timer so we cant just pass the ref
-
-	new /obj/effect/temp_visual/telegraphing/vending_machine_tilt(temp_target, roll_over_time)
-	ai_caller.balloon_alert_to_viewers("rolling...")
-	addtimer(CALLBACK(src, PROC_REF(do_roll_over), ai_caller, picked_dir), roll_over_time)
-
-	adjust_uses(-1)
-	if(uses)
-		desc = "[initial(desc)] It has [uses] use\s remaining."
-		build_all_button_icons()
-
-	COOLDOWN_START(src, time_til_next_tilt, roll_over_cooldown)
-
-/datum/action/innate/ai/ranged/core_tilt/proc/do_roll_over(mob/living/silicon/ai/ai_caller, picked_dir)
-	if (ai_caller.incapacitated() || !isturf(ai_caller.loc)) // prevents bugs where the ai is carded and rolls
-		return
-
-	var/turf/target = get_step(ai_caller, picked_dir) // in case we moved we pass the dir not the target turf
-
-	if (isnull(target))
-		return
-
-	var/paralyze_time = clamp(6 SECONDS, 0 SECONDS, (roll_over_cooldown * 0.9)) //the clamp prevents stunlocking as the max is always a little less than the cooldown between rolls
-
-	return ai_caller.fall_and_crush(target, MALF_AI_ROLL_DAMAGE, MALF_AI_ROLL_CRIT_CHANCE, null, paralyze_time, picked_dir, rotation = get_rotation_from_dir(picked_dir))
-
-/// Used in our radial menu, state-checking proc after the radial menu sleeps
-/datum/action/innate/ai/ranged/core_tilt/proc/radial_check(mob/living/silicon/ai/caller)
-	if (QDELETED(caller) || caller.incapacitated() || caller.stat == DEAD)
-		return FALSE
-
-	if (uses <= 0)
-		return FALSE
-
-	return TRUE
-
-/datum/action/innate/ai/ranged/core_tilt/proc/get_rotation_from_dir(dir)
-	switch (dir)
-		if (NORTH, NORTHWEST, WEST, SOUTHWEST)
-			return 270 // try our best to not return 180 since it works badly with animate
-		if (EAST, NORTHEAST, SOUTH, SOUTHEAST)
-			return 90
-		else
-			stack_trace("non-standard dir entered to get_rotation_from_dir. (got: [dir])")
-			return 0
-
-/datum/ai_module/utility/remote_vendor_tilt
-	name = "Remote vendor tilting"
-	description = "Lets you remotely tip vendors over in any direction."
-	cost = 15
-	one_purchase = FALSE
-	power_type = /datum/action/innate/ai/ranged/remote_vendor_tilt
-	unlock_sound = 'sound/effects/bang.ogg'
-	unlock_text = span_notice("You gain the ability to remotely tip any vendor onto any adjacent tiles.")
-
-/datum/action/innate/ai/ranged/remote_vendor_tilt
-	name = "Remotely tilt vendor"
-	desc = "Use to remotely tilt a vendor in any direction you desire."
-	button_icon_state = "vendor_tilt"
-	ranged_mousepointer = 'icons/effects/mouse_pointers/supplypod_target.dmi'
-	uses = VENDOR_TIPPING_USES
-	var/time_to_tilt = MALF_VENDOR_TIPPING_TIME
-	enable_text = span_notice("You prepare to wobble any vendors you see.")
-	disable_text = span_notice("You stop focusing on tipping vendors.")
-
-/datum/action/innate/ai/ranged/remote_vendor_tilt/New()
-	. = ..()
-	desc = "[desc] It has [uses] use\s remaining."
-
-/datum/action/innate/ai/ranged/remote_vendor_tilt/do_ability(mob/living/caller, atom/clicked_on)
-
-	if (!isAI(caller))
-		return FALSE
-	var/mob/living/silicon/ai/ai_caller = caller
-
-	if(ai_caller.incapacitated())
-		unset_ranged_ability(caller)
-		return FALSE
-
-	if(!isvendor(clicked_on))
-		clicked_on.balloon_alert(ai_caller, "not a vendor!")
-		return FALSE
-
-	var/obj/machinery/vending/clicked_vendor = clicked_on
-
-	if (clicked_vendor.tilted)
-		clicked_vendor.balloon_alert(ai_caller, "already tilted!")
-		return FALSE
-
-	if (!clicked_vendor.tiltable)
-		clicked_vendor.balloon_alert(ai_caller, "cannot be tilted!")
-		return FALSE
-
-	if (!clicked_vendor.is_operational)
-		clicked_vendor.balloon_alert(ai_caller, "inoperable!")
-		return FALSE
-
-	var/picked_dir_string = show_radial_menu(ai_caller, clicked_vendor, GLOB.all_radial_directions, custom_check = CALLBACK(src, PROC_REF(radial_check), caller, clicked_vendor))
-	if (isnull(picked_dir_string))
-		return FALSE
-	var/picked_dir = text2dir(picked_dir_string)
-
-	var/turf/target = get_step(clicked_vendor, picked_dir)
-	if (!ai_caller.can_see(target))
-		to_chat(ai_caller, span_warning("You can't see the target tile!"))
-		return FALSE
-
-	new /obj/effect/temp_visual/telegraphing/vending_machine_tilt(target, time_to_tilt)
-	clicked_vendor.visible_message(span_warning("[clicked_vendor] starts falling over..."))
-	clicked_vendor.balloon_alert_to_viewers("falling over...")
-	addtimer(CALLBACK(src, PROC_REF(do_vendor_tilt), clicked_vendor, target), time_to_tilt)
-
-	adjust_uses(-1)
-	if(uses)
-		desc = "[initial(desc)] It has [uses] use\s remaining."
-		build_all_button_icons()
-
-	unset_ranged_ability(caller, span_danger("Tilting..."))
-	return TRUE
-
-/datum/action/innate/ai/ranged/remote_vendor_tilt/proc/do_vendor_tilt(obj/machinery/vending/vendor, turf/target)
-	if (QDELETED(vendor))
-		return FALSE
-
-	if (vendor.tilted || !vendor.tiltable)
-		return FALSE
-
-	vendor.tilt(target, MALF_VENDOR_TIPPING_CRIT_CHANCE)
-
-/// Used in our radial menu, state-checking proc after the radial menu sleeps
-/datum/action/innate/ai/ranged/remote_vendor_tilt/proc/radial_check(mob/living/silicon/ai/caller, obj/machinery/vending/clicked_vendor)
-	if (QDELETED(caller) || caller.incapacitated() || caller.stat == DEAD)
-		return FALSE
-
-	if (QDELETED(clicked_vendor))
-		return FALSE
-
-	if (uses <= 0)
-		return FALSE
-
-	if (!caller.can_see(clicked_vendor))
-		to_chat(caller, span_warning("Lost sight of [clicked_vendor]!"))
-		return FALSE
 
 	return TRUE
 
