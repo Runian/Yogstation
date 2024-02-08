@@ -468,14 +468,24 @@
   * We then return the protection value
   */
 /atom/proc/emp_act(severity)
+
+
 	SEND_SIGNAL(src, COMSIG_ATOM_EMP_ACT, severity)
 	var/protection = NONE
 	if(HAS_TRAIT(src, TRAIT_EMPPROOF_CONTENTS))
 		protection |= EMP_PROTECT_CONTENTS
 	if(HAS_TRAIT(src, TRAIT_EMPPROOF_SELF))
 		protection |= EMP_PROTECT_SELF
+	
+	var wiresPulsed = FALSE;
 	if(!(protection & EMP_PROTECT_CONTENTS) && istype(wires))
 		wires.emp_pulse()
+		wiresPulsed = TRUE
+
+	var/protection2 = SEND_SIGNAL(src, COMSIG_ATOM_PRE_EMP_ACT, severity)
+	if(!wiresPulsed && !(protection2 & EMP_PROTECT_WIRES) && istype(wires))
+		wires.emp_pulse()
+
 	return protection // Pass the protection value collected here upwards
 
 /**
