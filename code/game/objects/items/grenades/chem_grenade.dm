@@ -22,7 +22,7 @@
 	create_reagents(1000)
 	stage_change() // If no argument is set, it will change the stage to the current stage, useful for stock grenades that start READY.
 	wires = new /datum/wires/explosive/chem_grenade(src)
-	ADD_TRAIT(src, TRAIT_EMPPROOF_CONTENTS, "innate_empproof")
+	AddElement(/datum/element/empprotection, EMP_PROTECT_WIRES)
 
 /obj/item/grenade/chem_grenade/examine(mob/user)
 	display_timer = (stage == GRENADE_READY)	//show/hide the timer based on assembly state

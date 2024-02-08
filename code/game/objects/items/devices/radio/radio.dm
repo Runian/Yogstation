@@ -125,7 +125,7 @@ GLOBAL_LIST_INIT(channel_tokens, list(
 		wires.cut(WIRE_TX) // OH GOD WHY
 	secure_radio_connections = new
 	. = ..()
-	ADD_TRAIT(src, TRAIT_EMPPROOF_CONTENTS, "innate_empproof")
+	AddElement(/datum/element/empprotection, EMP_PROTECT_WIRES)
 	frequency = sanitize_frequency(frequency, freerange)
 	set_frequency(frequency)
 

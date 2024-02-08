@@ -121,7 +121,7 @@
 	spark_system.attach(src)
 
 	wires = new /datum/wires/robot(src)
-	ADD_TRAIT(src, TRAIT_EMPPROOF_CONTENTS, "innate_empproof")
+	AddElement(/datum/element/empprotection, EMP_PROTECT_WIRES)
 
 	RegisterSignal(src, COMSIG_PROCESS_BORGCHARGER_OCCUPANT, PROC_REF(charge))
 
