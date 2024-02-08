@@ -174,7 +174,7 @@
 			UnregisterSignal(target, COMSIG_ATOM_EMP_ACT)
 		return TRUE
 
-/obj/item/implant/empshield/proc/overloaded(mob/living/target, severity)
+/obj/item/implant/empshield/proc/overloaded(mob/living/target, severity, protection)
 	if(world.time - lastemp > overloadtimer)
 		numrecent = 0
 	numrecent += severity

@@ -422,7 +422,7 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 		close(M)
 		. = TRUE //returns TRUE if any mobs actually got a close(M) call
 
-/datum/component/storage/proc/emp_act(datum/source, severity)
+/datum/component/storage/proc/emp_act(datum/source, severity, protection)
 	if(emp_shielded)
 		return
 	var/datum/component/storage/concrete/master = master()

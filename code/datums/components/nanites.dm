@@ -181,9 +181,9 @@
 	holder.icon_state = "nanites[nanite_percent]"
 	host_mob.set_hud_image_active(DIAG_NANITE_FULL_HUD)
 
-/datum/component/nanites/proc/on_emp(datum/source, severity)
-	if(HAS_TRAIT(host_mob, TRAIT_EMPPROOF_SELF))
-		return // don't do EMP effects if they're protected from EMPs
+/datum/component/nanites/proc/on_emp(datum/source, severity, protection)
+	if(protection & TRAIT_EMPPROOF_SELF)
+		return // No EMP effects if they're protected from EMPs.
 	if(iscarbon(host_mob))
 		var/mob/living/carbon/host_carbon = host_mob
 		if(host_carbon.dna?.species)
