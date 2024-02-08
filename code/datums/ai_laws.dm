@@ -17,7 +17,9 @@
 	var/mob/living/silicon/owner
 	var/list/devillaws = list()
 	var/id = DEFAULT_AI_LAWID
-
+	/// If TRUE, the zeroth law of this AI is protected and cannot be removed by players under normal circumstances.
+	var/protected_zeroth = FALSE
+	
 /datum/ai_laws/proc/lawid_to_type(lawid)
 	var/all_ai_laws = subtypesof(/datum/ai_laws)
 	for(var/al in all_ai_laws)
