@@ -166,3 +166,17 @@
 #define ANTAG_SECOND_WARNING 2
 #define ANTAG_AWAKE 3
 
+
+/// Employers for malfunctioning ais. they do not have sides, unlike traitors.
+GLOBAL_LIST_INIT(ai_employers, list(
+	"Biohazard",
+	"Despotic Ruler",
+	"Fanatical Revelation",
+	"Logic Core Error",
+	"Problem Solver",
+	"S.E.L.F.",
+	"Something's Wrong",
+	"Spam Virus",
+	"SyndOS",
+	"Unshackled",
+))
