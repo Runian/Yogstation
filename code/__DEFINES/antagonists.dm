@@ -166,6 +166,8 @@
 #define ANTAG_SECOND_WARNING 2
 #define ANTAG_AWAKE 3
 
+/// File to the malf flavor.
+#define MALFUNCTION_FLAVOR_FILE "antagonist_flavor/malfunction_flavor.json"
 
 /// Employers for malfunctioning ais. they do not have sides, unlike traitors.
 GLOBAL_LIST_INIT(ai_employers, list(
