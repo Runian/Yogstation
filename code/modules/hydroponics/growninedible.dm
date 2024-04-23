@@ -8,15 +8,21 @@
 	resistance_flags = FLAMMABLE
 	var/obj/item/seeds/seed = null // type path, gets converted to item on New(). It's safe to assume it's always a seed item.
 
-/obj/item/grown/Initialize(mapload, newloc, obj/item/seeds/new_seed)
+/obj/item/grown/Initialize(mapload, obj/item/seeds/new_seed)
+	to_chat(world, "(PRE) new_seed init is [new_seed]")
 	. = ..()
 	create_reagents(50)
 
+	to_chat(world, "(AFTER ..()) new_seed init is [new_seed]")
 	if(new_seed)
+		to_chat(world, "generating /new_seed.Copy()")
+		to_chat(world, "@ \"new seed\" potency is [new_seed.potency]")
 		seed = new_seed.Copy()
+		to_chat(world, "@ \"seed\" potency is [seed.potency]")
 	else if(ispath(seed))
 		// This is for adminspawn or map-placed growns. They get the default stats of their seed type.
 		seed = new seed()
+		to_chat(world, "generating /new")
 		seed.adjust_potency(50-seed.potency)
 
 	pixel_x = rand(-5, 5)
@@ -24,7 +30,7 @@
 
 	if(seed)
 		for(var/datum/plant_gene/trait/T in seed.genes)
-			T.on_new(src, newloc)
+			T.on_new(src, loc)
 
 		if(istype(src, seed.product)) // no adding reagents if it is just a trash item
 			seed.prepare_result(src)

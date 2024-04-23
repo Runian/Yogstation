@@ -148,20 +148,44 @@
 	var/output_loc = parent.Adjacent(user) ? user.loc : parent.loc //needed for TK
 	var/product_name
 	while(t_amount < getYield())
-		var/obj/item/reagent_containers/food/snacks/grown/t_prod = new product(output_loc, src)
-		if(parent.myseed.plantname != initial(parent.myseed.plantname))
-			t_prod.name = parent.myseed.plantname
-		if(parent.myseed.plantdesc)
-			t_prod.desc = parent.myseed.plantdesc
-		t_prod.seed.name = parent.myseed.name
-		t_prod.seed.desc = parent.myseed.desc
-		t_prod.seed.plantname = parent.myseed.plantname
-		t_prod.seed.plantdesc = parent.myseed.plantdesc
-		result.Add(t_prod) // User gets a consumable
-		if(!t_prod)
-			return
 		t_amount++
-		product_name = t_prod.seed.plantname
+
+		// Because there are two types of plants that can be grown, they have to be dealt with individually.
+		if(ispath(product, /obj/item/grown))
+			to_chat(world, "harvesting /grown")
+			to_chat(world, "src is [src]")
+			var/obj/item/grown/t_prod = new product(output_loc, src)
+			if(parent.myseed.plantname != initial(parent.myseed.plantname))
+				t_prod.name = parent.myseed.plantname
+			if(parent.myseed.plantdesc)
+				t_prod.desc = parent.myseed.plantdesc
+			t_prod.seed.name = parent.myseed.name
+			t_prod.seed.desc = parent.myseed.desc
+			t_prod.seed.plantname = parent.myseed.plantname
+			t_prod.seed.plantdesc = parent.myseed.plantdesc
+			result.Add(t_prod) // User gets a consumable
+			if(!t_prod)
+				return
+			product_name = t_prod.seed.plantname
+			continue
+
+		if(ispath(product, /obj/item/reagent_containers/food/snacks/grown))
+			to_chat(world, "harvesting /reagent_containers")
+			var/obj/item/reagent_containers/food/snacks/grown/t_prod = new product(output_loc, src)
+			if(parent.myseed.plantname != initial(parent.myseed.plantname))
+				t_prod.name = parent.myseed.plantname
+			if(parent.myseed.plantdesc)
+				t_prod.desc = parent.myseed.plantdesc
+			t_prod.seed.name = parent.myseed.name
+			t_prod.seed.desc = parent.myseed.desc
+			t_prod.seed.plantname = parent.myseed.plantname
+			t_prod.seed.plantdesc = parent.myseed.plantdesc
+			result.Add(t_prod) // User gets a consumable
+			if(!t_prod)
+				return
+			product_name = t_prod.seed.plantname
+			continue
+			
 	if(getYield() >= 1)
 		SSblackbox.record_feedback("tally", "food_harvested", getYield(), product_name)
 	parent.update_tray(user)
