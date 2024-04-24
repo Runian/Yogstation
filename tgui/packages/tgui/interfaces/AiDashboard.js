@@ -12,7 +12,7 @@ export const AiDashboard = (props, context) => {
 
   return (
     <Window
-      width={800}
+      width={650}
       height={600}
       resizable
       title="Dashboard">
